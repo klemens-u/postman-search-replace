@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+
+        body {
+            font-family: sans-serif;
+            background-color: rgb(153, 204, 255);
+        }
+
+        label {
+            display: block;
+        }
+    </style>
+
+</head>
+
+<body>
+    <h1 id="hl">Multiline Postman Search/Replace</h1>
+    <p>Export collection in Postman, paste content of JSON collection, search and replace, copy content back to JSON file, save and re-import into postman. TODO: regex replace</p>
+
+    <div>
+        <label>Paste source here:</label>
+        <textarea id="input" style="width: 98vw; height: 20vh;"></textarea>
+    </div>
+
+    <div>
+        <label>Search term:</label>
+        <textarea id="search" style="width: 98vw; height: 8vh;"></textarea>
+    </div>
+
+    <div>
+        <label>Replace term:</label>
+        <textarea id="replace" style="width: 98vw; height: 8vh;"></textarea>
+    </div>
+
+    <div style="text-align: center;">
+        <br><button id="doit" onClick="doit()" style="font-size: 1.2rem;">Replace</button>
+    </div>
+
+
+    <div>
+        <label>Result:</label>
+        <textarea id="output" style="width: 98vw; height: 20vh;"></textarea>
+    </div>
+
+    <p>(C) 2023 klemens.ullmann-marx@ull.at / <a href="https://www.ull.at">ull.at</a></p>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function (event) {
+
+        // doit();
+
+    }); // end of wait for dom doc
+
+
+    /**
+     * Trigger the search and replace action
+     */
+    function doit() {
+
+        let json = document.getElementById('input').value
+        let data = JSON.parse(json)
+        console.log(data)
+
+        window.recurseLevel = 0
+
+        data = recurse(data);
+
+        console.log('### RESULT ###', data)
+
+        // json = JSON.stringify(data, null, 4)
+        json = JSON.stringify(data,  null, '\t') // use tabs
+
+        document.getElementById('output').value = json
+    }
+
+
+    /**
+     * Recurse through objects and arrays to find "exec" js code parts
+     *
+     * @param obj
+     * @returns {*}
+     */
+    function recurse(obj) {
+
+        window.recurseLevel++
+
+        console.log('###### recurse ######', 'level:', window.recurseLevel)
+
+        // Iterate object
+        Object.entries(obj).forEach((entry) => {
+            let [key, value] = entry
+            console.log(`${key}: ${value}`)
+            // console.log ('type:', typeof value, 'isArray:', Array.isArray(value));
+
+            // Skip strings
+            if (typeof value === 'string') {
+                console.log('skip string')
+
+            // We only want to search and replace in keys "exec" which contain js code
+            } else if (key === 'exec') {
+                console.log('!!! "exec" js code found')
+                value = replace(value)
+
+            } else {
+                if (window.recurseLevel > 999) {
+                    console.log('recurse limit exceeded:', window.recurseLevel)
+                } else {
+                    value = recurse(value)
+                }
+            }
+
+            obj[key] = value
+        });
+
+        window.recurseLevel--
+
+        return obj
+    } // end of recurse()
+
+
+    /**
+     * - Join the array lines to text
+     * - Search and replace
+     * - Re-split to array lines
+     *
+     * @param arr
+     * @returns {*|string[]}
+     */
+    function replace(arr) {
+        let text = arr.join("\n");
+        console.log(text)
+
+        const search = document.getElementById('search').value;
+        const replace = document.getElementById('replace').value;
+        text = text.replace(search, replace)
+        console.log(text)
+
+        arr = text.split('\n')
+        console.log(arr)
+
+        return arr
+    } // end of replace()
+
+</script>
+
+</body>
+</html>
